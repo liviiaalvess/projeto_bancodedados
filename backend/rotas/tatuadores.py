@@ -2,8 +2,13 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 from database import conectar
+from typing import Optional, List
+
 
 router = APIRouter()
+
+class EstilosDoTatuador(BaseModel):
+    idestilos: List[int]
 
 # Modelo de dados — define os campos que o tatuador deve ter
 class Tatuador(BaseModel):
@@ -43,7 +48,6 @@ def buscar_tatuador(id: int):
         return {"erro": "Tatuador não encontrado"}
     return tatuador
 
-# POST /tatuadores — cadastra um novo tatuador
 @router.post("/tatuadores")
 def criar_tatuador(tatuador: Tatuador):
     conn = conectar()
@@ -54,9 +58,10 @@ def criar_tatuador(tatuador: Tatuador):
         (tatuador.nometatuador, tatuador.cpf, tatuador.email,
          tatuador.telefone, tatuador.datacontratacao, tatuador.idsenioridade)
     )
+    novo_id = cursor.lastrowid   # o ID que o MySQL gerou sozinho pro novo tatuador
     conn.commit()
     conn.close()
-    return {"mensagem": "Tatuador cadastrado com sucesso"}
+    return {"mensagem": "Tatuador cadastrado com sucesso", "idtatuador": novo_id}
 
 # PUT /tatuadores/{id} — atualiza um tatuador existente
 @router.put("/tatuadores/{id}")
@@ -89,3 +94,40 @@ def deletar_tatuador(id: int):
         conn.rollback()
         conn.close()
         return {"erro": "Não foi possível excluir este tatuador. Verifique se ele possui agendamentos ou estilos cadastrados."}
+
+
+
+
+@router.get("/tatuadores/{id}/estilos")
+def listar_estilos_do_tatuador(id: int):
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT estilo.idestilo, estilo.descricao
+        FROM tatuador_estilo
+        JOIN estilo ON tatuador_estilo.idestilo = estilo.idestilo
+        WHERE tatuador_estilo.idtatuador = %s
+    """, (id,))
+    estilos = cursor.fetchall()
+    conn.close()
+    return estilos
+
+
+@router.put("/tatuadores/{id}/estilos")
+def atualizar_estilos_do_tatuador(id: int, dados: EstilosDoTatuador):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM tatuador_estilo WHERE idtatuador = %s", (id,))
+    # apaga tudo que já existia pra esse tatuador e insere de novo —
+    # mais simples do que comparar o que foi marcado/desmarcado
+
+    for idestilo in dados.idestilos:
+        cursor.execute(
+            "INSERT INTO tatuador_estilo (idtatuador, idestilo, dataestilo) VALUES (%s, %s, CURDATE())",
+            (id, idestilo)
+        )
+
+    conn.commit()
+    conn.close()
+    return {"mensagem": "Estilos atualizados com sucesso"}

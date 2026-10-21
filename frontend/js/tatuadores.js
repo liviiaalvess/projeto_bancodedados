@@ -66,11 +66,10 @@ formTatuador.addEventListener('submit', async (e) => {
     telefone: document.getElementById('telefone').value || null,
     datacontratacao: new Date().toISOString().split('T')[0],
     idsenioridade: Number(document.getElementById('idsenioridade').value)
-    // Number(...) converte o texto do <select> em número
-    // o backend espera idsenioridade como int, não como texto
   }
 
   const idTatuador = formTatuador.dataset.idTatuador
+  let idParaEstilos = idTatuador   // qual id vamos usar pra salvar os estilos
 
   if (idTatuador) {
     await fetch(`${API}/tatuadores/${idTatuador}`, {
@@ -79,16 +78,53 @@ formTatuador.addEventListener('submit', async (e) => {
       body: JSON.stringify(tatuador)
     })
   } else {
-    await fetch(`${API}/tatuadores`, {
+    const resposta = await fetch(`${API}/tatuadores`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tatuador)
     })
+    const dados = await resposta.json()
+    idParaEstilos = dados.idtatuador   // pega o id que acabou de ser criado
   }
+
+  // ─── Salva os estilos marcados, numa segunda chamada ───
+  const idsMarcados = Array.from(document.querySelectorAll('#lista-estilos input:checked'))
+    .map(checkbox => Number(checkbox.value))
+
+  await fetch(`${API}/tatuadores/${idParaEstilos}/estilos`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idestilos: idsMarcados })
+  })
 
   limparFormulario()
   listarTatuadores()
 })
+
+// ─── Abre os dados do tatuador no formulário para edição ───
+async function preencherFormularioEdicao(tatuador) {
+  document.getElementById('nometatuador').value = tatuador.nometatuador
+  document.getElementById('cpf').value = tatuador.cpf
+  document.getElementById('email').value = tatuador.email || ''
+  document.getElementById('telefone').value = tatuador.telefone || ''
+  document.getElementById('idsenioridade').value = tatuador.idsenioridade
+
+  formTatuador.dataset.idTatuador = tatuador.idtatuador
+
+  // desmarca todos os checkboxes antes de marcar os certos
+  document.querySelectorAll('#lista-estilos input').forEach(cb => cb.checked = false)
+
+  const resposta = await fetch(`${API}/tatuadores/${tatuador.idtatuador}/estilos`)
+  const estilosDoTatuador = await resposta.json()
+  estilosDoTatuador.forEach(e => {
+    const checkbox = document.getElementById(`estilo-${e.idestilo}`)
+    if (checkbox) checkbox.checked = true
+  })
+
+  botaoSubmit.textContent = 'Salvar alteração'
+  botaoSubmit.classList.remove('btn-primary')
+  botaoSubmit.classList.add('btn-success')
+}
 
 // ─── Abre os dados do tatuador no formulário para edição ───
 function preencherFormularioEdicao(tatuador) {
@@ -113,3 +149,23 @@ async function deletarTatuador(id) {
   await fetch(`${API}/tatuadores/${id}`, { method: 'DELETE' })
   listarTatuadores()
 }
+
+
+// ─── Busca os estilos na API e monta os checkboxes ───
+async function carregarEstilos() {
+  const resposta = await fetch(`${API}/estilos`)
+  const estilos = await resposta.json()
+
+  const lista = document.getElementById('lista-estilos')
+  lista.innerHTML = ''
+
+  estilos.forEach(e => {
+    lista.innerHTML += `
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="${e.idestilo}" id="estilo-${e.idestilo}">
+        <label class="form-check-label" for="estilo-${e.idestilo}">${e.descricao}</label>
+      </div>`
+  })
+}
+
+carregarEstilos()
