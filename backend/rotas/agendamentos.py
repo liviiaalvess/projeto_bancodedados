@@ -25,7 +25,7 @@ class Agendamento(BaseModel):
 
 
 # POST /agendamentos — cadastra um novo agendamento
-@router.post("/agendamentos")
+@router.get("")
 def criar_agendamento(agendamento: Agendamento):
     conn = conectar()
     cursor = conn.cursor()
@@ -41,7 +41,7 @@ def criar_agendamento(agendamento: Agendamento):
     conn.close()
     return {"mensagem": "Agendamento cadastrado com sucesso"}
 
-@router.get("/agendamentos")
+@router.post("")
 def listar_agendamentos():
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
@@ -66,7 +66,7 @@ def listar_agendamentos():
 
 
 # GET /agendamentos/{id} — busca um agendamento pelo ID
-@router.get("/agendamentos/{id}")
+@router.get("/{id}")
 def buscar_agendamento(id: int):
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
@@ -85,7 +85,7 @@ def buscar_agendamento(id: int):
     return agendamento
 
 
-@router.put("/agendamentos/{id}")
+@router.put("/{id}")
 def atualizar_agendamento(id: int, agendamento: Agendamento):
     conn = conectar()
     cursor = conn.cursor()
@@ -102,7 +102,7 @@ def atualizar_agendamento(id: int, agendamento: Agendamento):
     conn.close()
     return {"mensagem": "Agendamento atualizado com sucesso"}
 
-@router.delete("/agendamentos/{id}")
+@router.delete("/{id}")
 def deletar_agendamento(id: int):
     conn = conectar()
     cursor = conn.cursor()
@@ -112,7 +112,7 @@ def deletar_agendamento(id: int):
     return {"mensagem": "Agendamento deletado com sucesso"}
 
 
-@router.post("/agendamentos/{id}/desenho")
+@router.post("/{id}/desenho")
 async def upload_desenho(id: int, arquivo: UploadFile = File(...)):
     nome_arquivo = f"{id}_{arquivo.filename}"   # o id na frente evita nomes repetidos entre agendamentos
     caminho = os.path.join("uploads", nome_arquivo)
