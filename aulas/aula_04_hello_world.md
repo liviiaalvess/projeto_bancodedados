@@ -13,7 +13,7 @@ Se a máquina foi reiniciada desde a última aula, repita os passos da Aula 3 an
    Se der erro de política de execução ou de `pydantic-core`/Rust, o passo a passo de correção está na Aula 3.
 2. **Reinstale as dependências:**
    ```powershell
-   pip install -r requirements.txt
+   
    ```
 
 ---
