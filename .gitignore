@@ -7,3 +7,5 @@ __pycache__/
 
 # Variáveis de ambiente (senhas e configurações locais)
 .env
+
+backend/uploads/

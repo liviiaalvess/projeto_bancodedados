@@ -47,6 +47,7 @@ carregarTatuadores()
 
 // ─── Carrega a lista de agendamentos ao abrir a página ───
 async function listarAgendamentos() {
+  async function listarAgendamentos() {
   const resposta = await fetch(`${API}/agendamentos`)
   const agendamentos = await resposta.json()
 
@@ -54,6 +55,11 @@ async function listarAgendamentos() {
   corpo.innerHTML = ''
 
   agendamentos.forEach(a => {
+    // se existir um desenho salvo, monta uma miniatura; senão, mostra "-"
+    const imagemHtml = a.desenhoaprovado
+      ? `<img src="${API}/uploads/${a.desenhoaprovado}" style="max-width: 60px; max-height: 60px;">`
+      : '-'
+
     corpo.innerHTML += `
       <tr>
         <td>${a.idagendamento}</td>
@@ -63,6 +69,7 @@ async function listarAgendamentos() {
         <td>${a.horaagendamento}</td>
         <td>${a.valortatuagem ?? '-'}</td>
         <td>${a.status}</td>
+        <td>${imagemHtml}</td>
         <td>
           <button class="btn btn-sm btn-warning me-2" onclick='preencherFormularioEdicao(${JSON.stringify(a)})'>Editar</button>
           <button class="btn btn-sm btn-danger" onclick="deletarAgendamento(${a.idagendamento})">Excluir</button>
@@ -71,69 +78,5 @@ async function listarAgendamentos() {
   })
 }
 
-listarAgendamentos()
-
-// ─── Cadastrar e atualizar agendamentos ───
-formAgendamento.addEventListener('submit', async (e) => {
-  e.preventDefault()
-
-  const agendamento = {
-    idcliente: Number(document.getElementById('idcliente').value),
-    idtatuador: Number(document.getElementById('idtatuador').value),
-    dataagendamento: document.getElementById('dataagendamento').value,
-    horaagendamento: document.getElementById('horaagendamento').value,
-    descricaotatuagem: document.getElementById('descricaotatuagem').value || null,
-    valortatuagem: document.getElementById('valortatuagem').value
-      ? Number(document.getElementById('valortatuagem').value)
-      : null,
-    status: document.getElementById('status').value
-  }
-  // no cadastro, o campo status vai vazio dentro do JSON — sem problema,
-  // porque o INSERT no backend nem usa esse valor (o banco aplica 'pendente' sozinho)
-
-  const idAgendamento = formAgendamento.dataset.idAgendamento
-
-  if (idAgendamento) {
-    await fetch(`${API}/agendamentos/${idAgendamento}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(agendamento)
-    })
-  } else {
-    await fetch(`${API}/agendamentos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(agendamento)
-    })
-  }
-
-  limparFormulario()
-  listarAgendamentos()
-})
-
-// ─── Abre os dados do agendamento no formulário para edição ───
-function preencherFormularioEdicao(agendamento) {
-  document.getElementById('idcliente').value = agendamento.idcliente
-  document.getElementById('idtatuador').value = agendamento.idtatuador
-  document.getElementById('dataagendamento').value = agendamento.dataagendamento
-  document.getElementById('horaagendamento').value = agendamento.horaagendamento
-  document.getElementById('descricaotatuagem').value = agendamento.descricaotatuagem || ''
-  document.getElementById('valortatuagem').value = agendamento.valortatuagem || ''
-
-  document.getElementById('status').value = agendamento.status
-  blocoStatus.style.display = 'block'   // só na edição o campo de status aparece
-
-  formAgendamento.dataset.idAgendamento = agendamento.idagendamento
-
-  botaoSubmit.textContent = 'Salvar alteração'
-  botaoSubmit.classList.remove('btn-primary')
-  botaoSubmit.classList.add('btn-success')
-}
-
-// ─── Exclui um agendamento ───
-async function deletarAgendamento(id) {
-  if (!confirm('Tem certeza que deseja excluir este agendamento?')) return
-
-  await fetch(`${API}/agendamentos/${id}`, { method: 'DELETE' })
-  listarAgendamentos()
+listarAgendamentos()   // essa linha já existia — confira se ela continua aqui depois de colar a função acima
 }

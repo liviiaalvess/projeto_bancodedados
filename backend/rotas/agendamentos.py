@@ -5,10 +5,11 @@
 #            tatuador (duas chaves estrangeiras).
 # ============================================================
 
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 from database import conectar
+import os
 
 router = APIRouter()
 
@@ -109,4 +110,38 @@ def deletar_agendamento(id: int):
     conn.commit()
     conn.close()
     return {"mensagem": "Agendamento deletado com sucesso"}
+
+
+@router.post("/agendamentos/{id}/desenho")
+async def upload_desenho(id: int, arquivo: UploadFile = File(...)):
+    nome_arquivo = f"{id}_{arquivo.filename}"   # o id na frente evita nomes repetidos entre agendamentos
+    caminho = os.path.join("uploads", nome_arquivo)
+
+    conteudo = await arquivo.read()       # lê o conteúdo do arquivo enviado
+    with open(caminho, "wb") as f:        # "wb" = write binary — é uma imagem, não texto
+        f.write(conteudo)
+
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE agendamento SET desenhoaprovado=%s WHERE idagendamento=%s", (nome_arquivo, id))
+    conn.commit()
+    conn.close()
+    return {"mensagem": "Desenho enviado com sucesso", "arquivo": nome_arquivo}
+
+@router.post("/agendamentos")
+def criar_agendamento(agendamento: Agendamento):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        """INSERT INTO agendamento (idcliente, idtatuador, dataagendamento, horaagendamento, descricaotatuagem, valortatuagem)
+           VALUES (%s, %s, %s, %s, %s, %s)""",
+        (agendamento.idcliente, agendamento.idtatuador, agendamento.dataagendamento,
+         agendamento.horaagendamento, agendamento.descricaotatuagem, agendamento.valortatuagem)
+    )
+    novo_id = cursor.lastrowid   # o ID que o MySQL gerou sozinho pro novo agendamento (AUTO_INCREMENT)
+    conn.commit()
+    conn.close()
+    return {"mensagem": "Agendamento cadastrado com sucesso", "idagendamento": novo_id}
+
+
 
