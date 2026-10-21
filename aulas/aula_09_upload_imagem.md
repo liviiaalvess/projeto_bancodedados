@@ -98,7 +98,27 @@ Também vale adicionar `backend/uploads/` no `.gitignore` — são arquivos de t
 
 ## Parte 3 — Backend: rota nova de upload
 
-Abra `backend/rotas/agendamentos.py` e atualize os imports no topo:
+Antes de mexer no código, instale uma biblioteca nova. O FastAPI usa `UploadFile`/`File` pra entender upload de arquivo, mas isso depende de outro pacote por baixo dos panos:
+
+Caso o projeto esteja rodando, aperte o Ctrl C para parar o projeto e conseguir digitar isso no terminal
+
+```powershell
+pip install python-multipart
+```
+
+> **Sem isso, a API nem consegue iniciar.** Assim que o Python encontrar uma rota usando `UploadFile`, o servidor quebra com esse erro:
+> ```
+> RuntimeError: Form data requires "python-multipart" to be installed.
+> ```
+> Se você já escreveu a rota da Parte 3 antes de instalar essa biblioteca, é exatamente esse erro que vai aparecer no terminal do uvicorn (que também pode ficar reiniciando sem parar, tentando recarregar o arquivo). Instale o pacote, depois pare o servidor (**Ctrl+C**) e rode `uvicorn main:app --reload` de novo.
+
+Depois de instalar, atualize o `requirements.txt` pra guardar essa dependência nova (senão, quem clonar o projeto depois não vai ter esse pacote instalado):
+
+```powershell
+pip freeze > requirements.txt
+```
+
+Agora sim, abra `backend/rotas/agendamentos.py` e atualize os imports no topo:
 
 ```python
 from fastapi import APIRouter, UploadFile, File
@@ -135,7 +155,9 @@ async def upload_desenho(id: int, arquivo: UploadFile = File(...)):
 
 ## Parte 4 — Backend: o cadastro passa a devolver o ID criado
 
-Ainda em `rotas/agendamentos.py`, ajuste só a rota de criar — é a única mudança no que já existia:
+Ainda em `rotas/agendamentos.py`, vamos alterar a função `criar_agendamento` que **já existe** — não é uma rota nova.
+
+> **Atenção pra não duplicar:** apague a função `criar_agendamento` inteira (desde o `@router.post("/agendamentos")` dela até o `return`) antes de colar a versão abaixo no lugar. Se você só colar por cima sem apagar a antiga, o arquivo fica com dois `POST /agendamentos` — e pior, corre o risco de empurrar ou apagar sem querer a rota `GET /agendamentos` que vem logo depois dela. Se preferir uma forma mais segura, edite só as duas linhas que realmente mudaram direto na função existente: a linha nova `novo_id = cursor.lastrowid` e o `return` com `idagendamento`.
 
 ```python
 # POST /agendamentos — cadastra um novo agendamento
@@ -245,7 +267,7 @@ formAgendamento.addEventListener('submit', async (e) => {
 
 ## Parte 7 — Frontend: mostrando a imagem na tabela
 
-Em `listarAgendamentos()`, monte a célula da imagem antes de montar a linha:
+Em `listarAgendamentos()`, monte a célula da imagem antes de montar a linha. Essa função **já existe** desde a Aula 8 — substitua o corpo dela por este, mas **mantenha a linha `listarAgendamentos()` sozinha que já vem logo depois dela** (é ela que carrega a tabela quando a página abre; se ela sumir junto na hora de colar, a tabela fica vazia até você cadastrar, editar ou excluir alguma coisa):
 
 ```javascript
 async function listarAgendamentos() {
@@ -278,18 +300,22 @@ async function listarAgendamentos() {
       </tr>`
   })
 }
+
+listarAgendamentos()   // essa linha já existia — confira se ela continua aqui depois de colar a função acima
 ```
 
-**Teste:** recarregue `agendamentos.html` e confirme que o agendamento com imagem mostra uma miniatura na tabela, e os outros mostram "-".
+**Teste:** recarregue `agendamentos.html` (sem cadastrar nada antes) e confirme que a tabela já aparece preenchida sozinha. Se ela aparecer vazia até você cadastrar/editar/excluir alguma coisa, é sinal de que a linha `listarAgendamentos()` acima se perdeu na hora de colar. O agendamento com imagem deve mostrar uma miniatura na tabela, e os outros "-".
 
 ---
 
 ## Erros comuns
 
+- **`{"detail":"Method Not Allowed"}` ao acessar `/agendamentos`, ou a tabela nunca lista nada:** provavelmente a rota `GET /agendamentos` sumiu na Parte 4 — confira se ela ainda existe em `rotas/agendamentos.py` e se não ficaram duas cópias do `POST /agendamentos` (aconteceu de colar a função nova do `criar_agendamento` do lado da antiga, em vez de substituir, empurrando o `GET` pra fora sem querer).
 - **A imagem não é enviada, sem erro nenhum:** confira se o `formData.append('arquivo', ...)` usa exatamente o mesmo nome (`arquivo`) do parâmetro da rota (`arquivo: UploadFile = File(...)`). Nomes diferentes fazem o FastAPI não encontrar o arquivo.
 - **Erro estranho de `Content-Type` ou o backend não reconhece o arquivo:** confira se você **não** colocou `headers: { 'Content-Type': ... }` na chamada que envia o `FormData`. O navegador precisa definir esse cabeçalho sozinho (ele inclui um "boundary" que identifica onde cada parte do arquivo começa e termina).
 - **Erro ao iniciar o servidor sobre a pasta `uploads`:** confira se a linha `os.makedirs("uploads", exist_ok=True)` está antes do `app.mount(...)` no `main.py`. Sem ela, o `StaticFiles` reclama se a pasta ainda não existir.
 - **A miniatura não aparece na tabela:** abra a URL da imagem direto no navegador (algo como `http://127.0.0.1:8000/uploads/3_desenho.jpg`) pra confirmar se o arquivo foi salvo com esse nome exato.
+- **`RuntimeError: Form data requires "python-multipart" to be installed`** (a API não sobe, ou fica reiniciando sem parar): faltou instalar essa biblioteca — veja a Parte 3, é o primeiro passo antes do código.
 
 ---
 
