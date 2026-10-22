@@ -11,7 +11,7 @@ function limparFormulario() {
 }
 
 async function listarEstilos() {
-  const resposta = await fetch(`${API}/estilos`)
+  const resposta = await fetchAutenticado(`${API}/clientes`)
   const estilos = await resposta.json()
 
   const corpo = document.getElementById('corpo-tabela')

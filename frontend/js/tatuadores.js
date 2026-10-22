@@ -15,7 +15,7 @@ function limparFormulario() {
 
 // ─── Busca as senioridades na API e preenche o <select> ───
 async function carregarSenioridades() {
-  const resposta = await fetch(`${API}/senioridade`)
+  const resposta = await fetchAutenticado(`${API}/clientes`)
   const senioridades = await resposta.json()
 
   const select = document.getElementById('idsenioridade')

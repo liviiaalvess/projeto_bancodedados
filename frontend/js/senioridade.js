@@ -1,5 +1,5 @@
 async function listarSenioridades() {
-  const resposta = await fetch(`${API}/senioridade`)
+  const resposta = await fetchAutenticado(`${API}/clientes`)
   const senioridades = await resposta.json()
 
   const corpo = document.getElementById('corpo-tabela')
