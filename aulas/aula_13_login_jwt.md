@@ -193,8 +193,7 @@ Esse terminal novo abre "limpo", sem o venv ativado — então ative de novo ant
 
 ```powershell
 cd backend
-.\venv\Scripts\Activate.ps1
-```
+python -m uvicorn main:app --reload```
 
 Agora copie o valor de `access_token` que voltou (só o texto de dentro das aspas). O comando abaixo tem um "molde" — `SEU_TOKEN_AQUI` — que precisa ser **apagado e substituído** pelo seu token, no mesmo lugar, dentro das aspas simples. Não é pra colar o token em outro lugar da linha, é pra **trocar** aquele pedaço:
 
