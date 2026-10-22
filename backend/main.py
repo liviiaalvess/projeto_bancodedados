@@ -23,13 +23,13 @@ app.include_router(tatuadores.router)
 app.include_router(agendamentos.router)
 app.include_router(estilos.router)
 app.include_router(clientes.router, prefix="/clientes", tags=["Clientes"])
+app.include_router(login.router, tags=["Login"])
+app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuários"])
+app.include_router(clientes.router, prefix="/clientes", tags=["Clientes"])
 app.include_router(senioridade.router, prefix="/senioridade", tags=["Senioridade"])
 app.include_router(estilos.router, prefix="/estilos", tags=["Estilos"])
 app.include_router(tatuadores.router, prefix="/tatuadores", tags=["Tatuadores"])
 app.include_router(agendamentos.router, prefix="/agendamentos", tags=["Agendamentos"])
-app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuários"])
-app.include_router(login.router, tags=["Login"])
-
 
 
 

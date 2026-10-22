@@ -8,7 +8,8 @@ import os
 
 router = APIRouter()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+# Força uma chave direta caso o .env não esteja sendo lido por algum motivo
+SECRET_KEY = os.getenv("SECRET_KEY") or "0bf92ba639625020007dc4807130d35f3fec52e63d95019a4318864bca14c06e"
 ALGORITMO = "HS256"
 
 
